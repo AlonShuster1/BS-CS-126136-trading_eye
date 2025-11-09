@@ -10,6 +10,7 @@ Original file is located at
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 !pip install plotly
 import plotly.graph_objects as go
@@ -105,11 +106,60 @@ top10
 
 i=0
 for df in top10_dfs:
-  fig = go.Figure(data = go.Scatter(x=df['Date'], y=df['High']))
+  #
+  df['Date'] = pd.to_datetime(df['Date'])
+  fig = go.Figure(data = go.Scatter(x=df['Date'], y=df['High'],mode='lines', name='Price'))
+  fig.add_scatter(x=df['Date'], y=df['SMA20'], mode='lines', name='SMA 20')
+  fig.add_scatter(x=df['Date'], y=df['SMA50'], mode='lines', name='SMA 50')
+  fig.add_scatter(x=df['Date'], y=df['SMA100'], mode='lines', name='SMA 100')
+
+  #add markers
+  above_sma = df['above_avg'] == True
+  fig.add_scatter(
+        x=df['Date'][above_sma],
+        y=df['High'][above_sma],
+        mode='markers',
+        marker=dict(color='red', size=8, symbol='triangle-up'),
+        name='Price > SMA20/50/100'
+    )
+
   fig.update_layout(
   title=f"{top10[i]} Stock",
   xaxis_title = "Date",
   yaxis_title = "Price",
+  template="plotly_dark"
   )
+  #
+  fig.update_xaxes(tickformat="%m-%Y")
   fig.show()
   i+=1
+
+i = 0
+for df in top10_dfs:
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    fig = go.Figure(data=go.Scatter(x=df['Date'], y=df['High'], mode='lines', name='Price'))
+    fig.add_scatter(x=df['Date'], y=df['SMA20'], mode='lines', name='SMA 20')
+    fig.add_scatter(x=df['Date'], y=df['SMA50'], mode='lines', name='SMA 50')
+    fig.add_scatter(x=df['Date'], y=df['SMA100'], mode='lines', name='SMA 100')
+
+
+    high_above_sma = df['High'].where(df['above_avg'], other=np.nan)
+
+    fig.add_scatter(
+        x=df['Date'],
+        y=high_above_sma,
+        mode='lines',
+        line=dict(color='white', width=3, dash='dot'),
+        name='Above all SMAs'
+    )
+
+    fig.update_layout(
+        title=f"{top10[i]} Stock",
+        xaxis_title="Date",
+        yaxis_title="Price",
+        template="plotly_dark"
+    )
+    fig.update_xaxes(tickformat="%m-%Y")
+    fig.show()
+    i += 1
